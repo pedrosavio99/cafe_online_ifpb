@@ -3,9 +3,9 @@ import Navbar from '../components/Navbar';
 import Slider from '../components/Slider';
 import MenuItemCard from '../components/MenuItemCard';
 import ModalLogin from '../components/ModalLogin';
-import ModalRegister from '../components/ModalRegister';
 import QuantityModal from '../components/QuantityModal';
 import CartPanel from '../components/CartPanel';
+import TableReservationModal from '../components/TableReservationModal';
 
 interface MenuItem {
   name: string;
@@ -18,6 +18,7 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  type?: 'coffee' | 'snack' | 'reservation';
 }
 
 interface Profile {
@@ -25,11 +26,18 @@ interface Profile {
   orderType: string;
 }
 
+interface Table {
+  number: number;
+  capacity: number;
+  fee: number;
+}
+
 const LandingPage: React.FC = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isQuantityOpen, setIsQuantityOpen] = useState(false);
+  const [isTableReservationOpen, setIsTableReservationOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profile, setProfile] = useState<Profile>({ paymentMethod: 'pix', orderType: 'retirada' });
@@ -54,10 +62,25 @@ const LandingPage: React.FC = () => {
     { name: 'Pão de Queijo', description: 'Pãozinho de queijo quentinho', price: 5.0, type: 'snack' },
   ];
 
+  const tables: Table[] = [
+    { number: 1, capacity: 4, fee: 5.0 },
+    { number: 2, capacity: 2, fee: 5.0 },
+    { number: 3, capacity: 6, fee: 5.0 },
+  ];
+
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
     if (isLoggedIn) {
       setIsQuantityOpen(true);
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
+
+  const handleTableClick = (table: Table) => {
+    setSelectedTable(table);
+    if (isLoggedIn) {
+      setIsTableReservationOpen(true);
     } else {
       setIsLoginOpen(true);
     }
@@ -78,14 +101,15 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-200 relative">
       <Navbar onLoginClick={() => setIsLoginOpen(true)} />
-      <main className="container mx-auto p-4 mt-[50px]">
+      <div className='mt-[50px] w-full pt-4 mx-auto container'>
         <Slider />
-        <h1 className="text-xl font-semibold text-gray-900 text-center mb-6">
-          Cardápio Café Online
-        </h1>
-        <section className="mb-8">
+      </div>
+
+      <main className="container mx-auto p-4 relative w-full max-w-3xl sm:max-w-4xl lg:w-[95%] lg:max-w-5xl">
+       
+        <section className="mb-8 ">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Cafés</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems
               .filter((item) => item.type === 'coffee')
               .map((item, index) => (
@@ -99,9 +123,9 @@ const LandingPage: React.FC = () => {
               ))}
           </div>
         </section>
-        <section>
+        <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Salgados</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems
               .filter((item) => item.type === 'snack')
               .map((item, index) => (
@@ -115,27 +139,35 @@ const LandingPage: React.FC = () => {
               ))}
           </div>
         </section>
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Mesas Disponíveis</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tables.map((table) => (
+              <MenuItemCard
+                key={table.number}
+                name={`Mesa ${table.number}`}
+                description={`Capacidade: ${table.capacity} pessoas`}
+                price={table.fee}
+                onClick={() => handleTableClick(table)}
+              />
+            ))}
+          </div>
+        </section>
       </main>
       <ModalLogin
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
-        onRegisterClick={() => {
-          setIsLoginOpen(false);
-          setIsRegisterOpen(true);
-        }}
-      />
-      <ModalRegister
-        isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
-        onLoginClick={() => {
-          setIsRegisterOpen(false);
-          setIsLoginOpen(true);
-        }}
       />
       <QuantityModal
         isOpen={isQuantityOpen}
         onClose={() => setIsQuantityOpen(false)}
         item={selectedItem}
+        onAddToCart={handleAddToCart}
+      />
+      <TableReservationModal
+        isOpen={isTableReservationOpen}
+        onClose={() => setIsTableReservationOpen(false)}
+        table={selectedTable}
         onAddToCart={handleAddToCart}
       />
       <CartPanel

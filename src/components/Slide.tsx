@@ -1,15 +1,17 @@
 import React from 'react';
 
 interface SlideProps {
-  title: string;
-  description: string;
+  image: string;
 }
 
-const Slide: React.FC<SlideProps> = ({ title, description }) => {
+const Slide: React.FC<SlideProps> = ({ image }) => {
   return (
-    <div className="bg-gray-300 p-4 rounded-md text-center animate-fade-in">
-      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      <p className="text-sm text-gray-700 mt-1">{description}</p>
+    <div className="bg-gray-300 p-2 sm:p-4 rounded-md text-center animate-fade-in">
+      <img
+        src={image}
+        alt="Slide"
+        className="w-full h-32 sm:h-40 md:h-48 lg:h-64 object-cover rounded-md"
+      />
     </div>
   );
 };
