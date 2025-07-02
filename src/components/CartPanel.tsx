@@ -69,9 +69,9 @@ const CartPanel: React.FC<CartPanelProps> = ({ cart, onClearCart, profile, onUpd
         quantity: 1,
         payment_method: 'pix',
         back_urls: {
-          success: 'https://example.com/success',
-          failure: 'https://example.com/failure',
-          pending: 'https://example.com/pending',
+          success: 'https://cafe-online-ifpb.vercel.app',
+          failure: 'https://cafe-online-ifpb.vercel.app',
+          pending: 'https://cafe-online-ifpb.vercel.app',
         },
       };
 
