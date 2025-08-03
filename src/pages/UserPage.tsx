@@ -1,357 +1,222 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'; // Importar useLocation para verificar a rota
+import { Link } from 'react-router-dom';
+import Slider from '../components/Slider';
+import MenuItemCard from '../components/MenuItemCard';
+import ModalLogin from '../components/ModalLogin';
+import ModalRegister from '../components/ModalRegister';
+import QuantityModal from '../components/QuantityModal';
+import CartPanel from '../components/CartPanel';
+import ProfileSection from '../components/ProfileSection';
+import TableReservationModal from '../components/TableReservationModal';
 
-// URL da API configurável para testes
-const API_URL = 'https://server-cafe-ifpb.onrender.com/api/pedidos';
+interface MenuItem {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl?: string; // Campo opcional para a URL da imagem
+  type: 'coffee' | 'snack';
+}
 
 interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  type?: 'coffee' | 'snack' | 'reservation';
 }
 
-interface CartPanelProps {
-  cart: CartItem[];
-  onClearCart: () => void;
-  profile: { paymentMethod: string; orderType: string };
-  onUpdateProfile: (profile: { paymentMethod: string; orderType: string }) => void;
-  isLoggedIn: boolean;
-  onLoginClick: () => void;
+interface Profile {
+  paymentMethod: string;
+  orderType: string;
+  deliveryAddress?: string;
 }
 
-const CartPanel: React.FC<CartPanelProps> = ({ cart, onClearCart, profile, onUpdateProfile, isLoggedIn, onLoginClick }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | null }>({ message: '', type: null });
-  const [deliveryAddress, setDeliveryAddress] = useState<string>('');
-  const [showAddressInput, setShowAddressInput] = useState<boolean>(false);
-  const [, setPaymentResponse] = useState<{
-    preference_id?: string;
-    init_point?: string;
-    external_reference?: string;
-    title?: string;
-    amount?: number;
-    quantity?: number;
-    payment_method?: string;
-  }>({});
-  const location = useLocation(); // Hook para obter a rota atual
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+interface Table {
+  number: number;
+  capacity: number;
+  fee: number;
+  imageUrl?: string;
+}
 
-  // Carregar endereço do localStorage ao abrir o carrinho
+const UserPage: React.FC = () => {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [isQuantityOpen, setIsQuantityOpen] = useState(false);
+  const [isTableReservationOpen, setIsTableReservationOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profile, setProfile] = useState<Profile>({ paymentMethod: 'pix', orderType: 'retirada', deliveryAddress: '' });
+  const [showProfile, setShowProfile] = useState(false);
+
   useEffect(() => {
-    if (isOpen && profile.orderType === 'entrega') {
-      const savedAddress = localStorage.getItem('deliveryAddress');
-      if (savedAddress) {
-        setDeliveryAddress(savedAddress);
-        setShowAddressInput(false);
-      } else {
-        setShowAddressInput(true);
-      }
-    } else {
-      setShowAddressInput(false);
-    }
-  }, [isOpen, profile.orderType]);
+    const userData = localStorage.getItem('user');
+    if (userData) setIsLoggedIn(true);
+    const savedProfile = localStorage.getItem('profile');
+    if (savedProfile) setProfile(JSON.parse(savedProfile));
+  }, []);
 
-  // Corrigir profile.paymentMethod quando o carrinho abrir
   useEffect(() => {
-    if (isOpen) {
-      console.log('Carrinho aberto, verificando profile.paymentMethod:', profile.paymentMethod);
-      if (!['online', 'loja'].includes(profile.paymentMethod)) {
-        console.log('profile.paymentMethod inválido, corrigindo para "online"');
-        onUpdateProfile({ ...profile, paymentMethod: 'online' });
-      }
-    }
-  }, [isOpen, profile, onUpdateProfile]);
+    localStorage.setItem('profile', JSON.stringify(profile));
+  }, [profile]);
 
-  // Limpar notificação após 3 segundos
-  useEffect(() => {
-    if (notification.message) {
-      const timer = setTimeout(() => {
-        setNotification({ message: '', type: null });
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
+  const menuItems: MenuItem[] = [
+    { name: 'Espresso', description: 'Café forte e encorpado', price: 8.0, type: 'coffee', imageUrl: 'https://loucodocafe.com.br/wp-content/uploads/2016/11/Caf%C3%A9-espresso.jpg' },
+    { name: 'Cappuccino', description: 'Café com leite e espuma', price: 12.0, type: 'coffee', imageUrl: 'https://blog.cybercook.com.br/wp-content/uploads/2022/07/capuccino-caseiro-suavizando-e-saborizando-o-seu-cafe.jpg' },
+    { name: 'Latte', description: 'Café suave com leite vaporizado', price: 10.0, type: 'coffee', imageUrl: 'https://uniquecafes.com.br/wp-content/uploads/2021/08/Destaque-cafe-Latte.jpg' },
+    { name: 'Mocha', description: 'Café com chocolate', price: 14.0, type: 'coffee', imageUrl: 'https://recursos.puravida.com.br/i/receitas/lp-mochea-coffee-foto-desk.jpg' },
+    { name: 'Coxinha', description: 'Salgado frito com frango', price: 6.0, type: 'snack', imageUrl: 'https://guiadacozinha.com.br/wp-content/uploads/2018/08/coxinhadefrangocremosa.webp' },
+    { name: 'Pão de Queijo', description: 'Pãozinho de queijo quentinho', price: 5.0, type: 'snack', imageUrl: 'https://togocongelados.com.br/wp-content/uploads/2022/05/pao-de-queijo.png' },
+  ];
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log('Método de pagamento alterado para:', e.target.value);
-    onUpdateProfile({ ...profile, paymentMethod: e.target.value });
-  };
+  const tables: Table[] = [
+    { number: 1, capacity: 4, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg' },
+    { number: 2, capacity: 2, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg'  }, 
+    { number: 3, capacity: 6, fee: 5.0,  imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg'  },
+  ];
 
-  const handleOrderTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log('Tipo de pedido alterado para:', e.target.value);
-    onUpdateProfile({ ...profile, orderType: e.target.value });
-  };
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDeliveryAddress(e.target.value);
-  };
-
-  const handleSaveAddress = () => {
-    if (deliveryAddress.trim()) {
-      localStorage.setItem('deliveryAddress', deliveryAddress);
-      setShowAddressInput(false);
-      setNotification({ message: 'Endereço salvo com sucesso!', type: 'success' });
+  const handleItemClick = (item: MenuItem) => {
+    setSelectedItem(item);
+    if (isLoggedIn) {
+      setIsQuantityOpen(true);
     } else {
-      setNotification({ message: 'Por favor, insira um endereço válido.', type: 'error' });
+      setIsLoginOpen(true);
     }
   };
 
-  const handleFinalize = async () => {
-    console.log('handleFinalize chamado com paymentMethod:', profile.paymentMethod);
-
-    // Verificar se o usuário não está na rota /user ou não está logado
-    const isInUserRoute = location.pathname.includes('/user');
-    if (!isLoggedIn || !isInUserRoute) {
-      console.log('Usuário não está logado ou não está na rota /user, chamando onLoginClick');
-      onLoginClick();
-      return;
-    }
-
-    if (profile.orderType === 'entrega' && !deliveryAddress.trim()) {
-      setNotification({ message: 'Por favor, insira um endereço de entrega.', type: 'error' });
-      setShowAddressInput(true);
-      return;
-    }
-
-    // Obter o usuário do localStorage
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userEmail = user.email || 'email-nao-encontrado';
-
-    // Payload para a API
-    const payload = {
-      cartItems: cart.map(item => ({
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: (item.price * item.quantity).toFixed(2),
-      })),
-      paymentMethod: profile.paymentMethod,
-      orderType: profile.orderType,
-      address: profile.orderType === 'entrega' ? deliveryAddress : 'Retirada na loja',
-      valor: total.toFixed(2),
-      email: userEmail,
-    };
-
-    // Log do payload fictício
-    console.log('Payload do pedido:', JSON.stringify(payload, null, 2));
-
-    if (profile.paymentMethod === 'online') {
-      console.log('Processando pagamento online...');
-      setIsLoading(true);
-      const title = cart.map(item => `${item.name} (x${item.quantity})`).join(', ');
-      const onlinePayload = {
-        title: title || 'Produtos do Carrinho',
-        price: total,
-        quantity: 1,
-        payment_method: 'pix',
-        back_urls: {
-          success: 'https://cafe-online-ifpb.vercel.app',
-          failure: 'https://cafe-online-ifpb.vercel.app',
-          pending: 'https://cafe-online-ifpb.vercel.app',
-        },
-      };
-
-      console.log('Payload enviado para pagamento online:', onlinePayload);
-
-      try {
-        const response = await fetch('https://payment-microservices-c54u.onrender.com/payments', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(onlinePayload),
-        });
-
-        console.log('Status da resposta da API:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Resposta da API:', data);
-
-        setPaymentResponse(data);
-        if (data.init_point) {
-          console.log('Redirecionando para init_point:', data.init_point);
-          window.location.href = data.init_point;
-        } else {
-          console.error('Erro: A API não retornou um init_point. Resposta:', data);
-          setNotification({ message: 'Erro: A API não retornou um link de pagamento.', type: 'error' });
-        }
-      } catch (error) {
-        console.error('Erro ao enviar POST:', error);
-        setNotification({ message: 'Falha ao processar o pagamento. Tente novamente.', type: 'error' });
-      } finally {
-        setIsLoading(false);
-      }
+  const handleTableClick = (table: Table) => {
+    setSelectedTable(table);
+    if (isLoggedIn) {
+      setIsTableReservationOpen(true);
     } else {
-      console.log('Processando pagamento na loja...');
-      setIsLoading(true);
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        console.log('Status da resposta da API:', response.status);
-
-        if (!response.ok) {
-          throw new Error(`Erro na API: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Resposta da API:', data);
-
-        onClearCart();
-        setNotification({ message: 'Pedido finalizado com sucesso!', type: 'success' });
-      } catch (error) {
-        console.error('Erro ao enviar POST:', error);
-        setNotification({ message: 'Falha ao processar o pedido. Tente novamente.', type: 'error' });
-      } finally {
-        setIsLoading(false);
-      }
+      setIsLoginOpen(true);
     }
+  };
+
+  const handleAddToCart = (item: CartItem) => {
+    setCart([...cart, item]);
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
+  const handleUpdateProfile = (newProfile: Profile) => {
+    setProfile(newProfile);
   };
 
   return (
-    <>
-      {/* Ícone do Carrinho (visível quando minimizado) */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-gray-900 transition-all duration-300 animate-shake"
-          aria-label="Abrir carrinho"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
-          {totalItems > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
-              {totalItems}
-            </span>
-          )}
-        </button>
-      )}
-      {/* Painel do Carrinho */}
-      <div
-        className={`fixed top-0 right-0 h-full bg-gray-200 p-4 w-64 transform transition-transform duration-500 ease-out shadow-lg ${
-          isOpen ? 'translate-x-0 animate-bounce-in' : 'translate-x-full'
-        }`}
-      >
-        {/* Notificação Temporária */}
-        <div className="flex justify-between items-center mb-3 mt-[50px]">
-          <h2 className="text-lg font-semibold text-gray-900">Carrinho</h2>
+    <div className="min-h-screen bg-gray-200 relative">
+      <nav className="z-10 top-0 fixed w-full bg-gray-900 text-white p-3 flex justify-between items-center">
+        <div className="text-lg font-semibold">Café Online</div>
+        <div className="flex space-x-4">
           <button
-            onClick={() => setIsOpen(false)}
-            className="text-gray-700 hover:text-gray-900"
-            aria-label="Fechar carrinho"
+            onClick={() => setShowProfile(!showProfile)}
+            className="text-sm hover:text-gray-200"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            {showProfile ? 'Cardápio' : 'Perfil'}
           </button>
+          <Link to="/" className="text-sm hover:text-gray-200">Logout</Link>
         </div>
-        <div className="space-y-3">
-          {cart.length === 0 ? (
-            <p className="text-sm text-gray-700">Carrinho vazio</p>
-          ) : (
-            <>
-              {cart.map((item, index) => (
-                <div key={index} className="text-sm text-gray-700">
-                  <p>{item.name} (x{item.quantity})</p>
-                  <p>R$ {(item.price * item.quantity).toFixed(2)}</p>
-                </div>
-              ))}
-              <p className="text-sm font-semibold text-gray-900 mt-2">Total: R$ {total.toFixed(2)}</p>
-              <div className="space-y-2">
-                <select
-                  value={profile.paymentMethod}
-                  onChange={handlePaymentChange}
-                  className="w-full p-2 text-sm border border-gray-300 rounded"
-                >
-                  <option value="online">Pagamento Online</option>
-                  <option value="loja">Pagamento na Loja</option>
-                </select>
-                <select
-                  value={profile.orderType}
-                  onChange={handleOrderTypeChange}
-                  className="w-full p-2 text-sm border border-gray-300 rounded"
-                >
-                  <option value="retirada">Retirada na Loja</option>
-                  <option value="entrega">Entrega</option>
-                </select>
-                {profile.orderType === 'entrega' && (
-                  <div className="space-y-2">
-                    {showAddressInput ? (
-                      <>
-                        <input
-                          type="text"
-                          value={deliveryAddress}
-                          onChange={handleAddressChange}
-                          placeholder="Rua e número"
-                          className="w-full p-2 text-sm border border-gray-300 rounded"
-                        />
-                        <button
-                          onClick={handleSaveAddress}
-                          className="w-full bg-gray-800 text-white px-3 py-1 text-sm rounded hover:bg-gray-900 transition-all duration-300"
-                        >
-                          Salvar Endereço
-                        </button>
-                      </>
-                    ) : (
-                      <p className="text-sm text-gray-700">Endereço: {deliveryAddress}</p>
-                    )}
-                  </div>
-                )}
-                <button
-                  onClick={handleFinalize}
-                  className={`w-full bg-gray-800 text-white px-3 py-1 text-sm rounded hover:bg-gray-900 transition-all duration-300 ${
-                    isLoading || (profile.orderType === 'entrega' && !deliveryAddress.trim()) ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  disabled={isLoading || (profile.orderType === 'entrega' && !deliveryAddress.trim())}
-                >
-                  {isLoading ? 'Carregando...' : 'Finalizar Pedido'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        {notification.message && (
-          <div
-            className={`p-3 mt-10 rounded shadow-lg text-white text-sm animate-bounce-in z-50 ${
-              notification.type === 'success' ? 'bg-gray-800' : 'bg-red-600'
-            }`}
-          >
-            {notification.message}
-          </div>
-        )}
+      </nav>
+      
+        {showProfile ? (
+          <main className="container mx-auto p-4 pt-[70px]">
+          <ProfileSection profile={profile} onUpdateProfile={handleUpdateProfile} />
+        </main>
+        ) : (
+          <>
+                    <div className='mt-[50px] w-full pt-4 mx-auto container'>
+        <Slider />
       </div>
-    </>
+        <main className="container mx-auto p-4 relative w-full max-w-3xl sm:max-w-4xl lg:w-[95%] lg:max-w-5xl">
+        
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Cafés</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {menuItems
+                  .filter((item) => item.type === 'coffee')
+                  .map((item, index) => (
+                    <MenuItemCard
+                      imageUrl={item.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback
+                      key={index}
+                      name={item.name}
+                      description={item.description}
+                      price={item.price}
+                      onClick={() => handleItemClick(item)}
+                    />
+                  ))}
+              </div>
+            </section>
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Salgados</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {menuItems
+                  .filter((item) => item.type === 'snack')
+                  .map((item, index) => (
+                    <MenuItemCard
+                      key={index}
+                      name={item.name}
+                      description={item.description}
+                      price={item.price}
+                      imageUrl={item.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback
+                      onClick={() => handleItemClick(item)}
+                    />
+                  ))}
+              </div>
+            </section>
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Mesas Disponíveis</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {tables.map((table) => (
+                  <MenuItemCard
+                    key={table.number}
+                    name={`Mesa ${table.number}`}
+                    description={`Capacidade: ${table.capacity} pessoas`}
+                    price={table.fee}
+                    imageUrl={table.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback
+                    onClick={() => handleTableClick(table)}
+                  />
+                ))}
+              </div>
+            </section>
+            </main>
+          </>
+        )}
+      <ModalLogin
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+      />
+      <ModalRegister
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+        onLoginClick={() => {
+          setIsRegisterOpen(false);
+          setIsLoginOpen(true);
+        }}
+      />
+      <QuantityModal
+        isOpen={isQuantityOpen}
+        onClose={() => setIsQuantityOpen(false)}
+        item={selectedItem}
+        onAddToCart={handleAddToCart}
+      />
+      <TableReservationModal
+        isOpen={isTableReservationOpen}
+        onClose={() => setIsTableReservationOpen(false)}
+        table={selectedTable}
+        onAddToCart={handleAddToCart}
+      />
+      <CartPanel
+        cart={cart}
+        onClearCart={handleClearCart}
+        profile={profile}
+        onUpdateProfile={handleUpdateProfile}
+        isLoggedIn={isLoggedIn}
+        onLoginClick={() => setIsLoginOpen(true)}
+      />
+    </div>
   );
 };
 
-export default CartPanel;
+export default UserPage;
