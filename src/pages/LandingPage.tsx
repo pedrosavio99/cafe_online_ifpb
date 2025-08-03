@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Importar useLocation
 import Navbar from '../components/Navbar';
 import Slider from '../components/Slider';
 import MenuItemCard from '../components/MenuItemCard';
@@ -12,7 +13,7 @@ interface MenuItem {
   description: string;
   price: number;
   type: 'coffee' | 'snack';
-    imageUrl?: string; // Novo campo para a URL da imagem
+  imageUrl?: string;
 }
 
 interface CartItem {
@@ -20,7 +21,7 @@ interface CartItem {
   price: number;
   quantity: number;
   type?: 'coffee' | 'snack' | 'reservation';
-  imageUrl?: string; // Novo campo para a URL da imagem
+  imageUrl?: string;
 }
 
 interface Profile {
@@ -32,7 +33,7 @@ interface Table {
   number: number;
   capacity: number;
   fee: number;
-  imageUrl?: string; // Novo campo para a URL da imagem
+  imageUrl?: string;
 }
 
 const LandingPage: React.FC = () => {
@@ -44,6 +45,7 @@ const LandingPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profile, setProfile] = useState<Profile>({ paymentMethod: 'pix', orderType: 'retirada' });
+  const location = useLocation(); // Hook para obter a rota atual
 
   useEffect(() => {
     const loginData = localStorage.getItem('loginData');
@@ -67,24 +69,30 @@ const LandingPage: React.FC = () => {
 
   const tables: Table[] = [
     { number: 1, capacity: 4, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg' },
-    { number: 2, capacity: 2, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg'  }, 
-    { number: 3, capacity: 6, fee: 5.0,  imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg'  },
+    { number: 2, capacity: 2, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg' },
+    { number: 3, capacity: 6, fee: 5.0, imageUrl: 'https://servircomrequinte.francobachot.com.br/wp-content/uploads/2021/07/post_thumbnail-8b950c0bb89fd9f5c0c7c0b5e0b02df6.jpg' },
   ];
 
   const handleItemClick = (item: MenuItem) => {
     setSelectedItem(item);
-    if (isLoggedIn) {
+    // Verificar se o usuário está logado e na rota /user
+    const isInUserRoute = location.pathname.includes('/user');
+    if (isLoggedIn && isInUserRoute) {
       setIsQuantityOpen(true);
     } else {
+      console.log('Usuário não está logado ou não está na rota /user, abrindo modal de login');
       setIsLoginOpen(true);
     }
   };
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
-    if (isLoggedIn) {
+    // Verificar se o usuário está logado e na rota /user
+    const isInUserRoute = location.pathname.includes('/user');
+    if (isLoggedIn && isInUserRoute) {
       setIsTableReservationOpen(true);
     } else {
+      console.log('Usuário não está logado ou não está na rota /user, abrindo modal de login');
       setIsLoginOpen(true);
     }
   };
@@ -109,15 +117,14 @@ const LandingPage: React.FC = () => {
       </div>
 
       <main className="container mx-auto p-4 relative w-full max-w-3xl sm:max-w-4xl lg:w-[95%] lg:max-w-5xl">
-       
-        <section className="mb-8 ">
+        <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Cafés</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {menuItems
               .filter((item) => item.type === 'coffee')
               .map((item, index) => (
                 <MenuItemCard
-                imageUrl={item.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback 
+                  imageUrl={item.imageUrl || 'https://via.placeholder.com/150'}
                   key={index}
                   name={item.name}
                   description={item.description}
@@ -134,7 +141,7 @@ const LandingPage: React.FC = () => {
               .filter((item) => item.type === 'snack')
               .map((item, index) => (
                 <MenuItemCard
-                  imageUrl={item.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback
+                  imageUrl={item.imageUrl || 'https://via.placeholder.com/150'}
                   key={index}
                   name={item.name}
                   description={item.description}
@@ -149,7 +156,7 @@ const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tables.map((table) => (
               <MenuItemCard
-                imageUrl={table.imageUrl || 'https://via.placeholder.com/150'} // URL da imagem com fallback
+                imageUrl={table.imageUrl || 'https://via.placeholder.com/150'}
                 key={table.number}
                 name={`Mesa ${table.number}`}
                 description={`Capacidade: ${table.capacity} pessoas`}
