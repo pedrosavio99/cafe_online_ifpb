@@ -99,14 +99,13 @@ const AdminPage: React.FC = () => {
   const [pendenteOrders, setPendenteOrders] = useState<Order[]>([]);
   const [aprovadoOrders, setAprovadoOrders] = useState<Order[]>([]);
   const [rejeitadoOrders, setRejeitadoOrders] = useState<Order[]>([]);
-  
   const [finalizadoOrders, setFinalizadoOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<string>('pendente');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState<boolean>(true);
-  const [pollingTimeout, setPollingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [pollingTimeout, setPollingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // Função para verificar se há mudanças nos pedidos
   const hasOrdersChanged = (currentOrders: Order[], newOrders: Order[]): boolean => {
