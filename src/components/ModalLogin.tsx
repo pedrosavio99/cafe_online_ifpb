@@ -109,7 +109,7 @@ const ModalLogin: React.FC<ModalLoginProps> = ({ isOpen, onClose }) => {
                       };
                       authDispatch({ type: 'SET_USER', payload: userData });
                       localStorage.setItem('user', JSON.stringify(userData));
-                      if (decoded.email === 'pedro.sarmento@academico.ifpb.edu.br') {
+                      if (decoded.email === 'pedro.sarmento@academico.ifpb.edu.br' || decoded.email === 'braulio.matheus@academico.ifpb.edu.br' || decoded.email === 'lucas.alves.1@academico.ifpb.edu.br') {
                         navigate('/admin');
                       } else {
                         navigate('/user');
