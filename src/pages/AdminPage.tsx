@@ -99,6 +99,7 @@ const AdminPage: React.FC = () => {
   const [pendenteOrders, setPendenteOrders] = useState<Order[]>([]);
   const [aprovadoOrders, setAprovadoOrders] = useState<Order[]>([]);
   const [rejeitadoOrders, setRejeitadoOrders] = useState<Order[]>([]);
+  
   const [finalizadoOrders, setFinalizadoOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<string>('pendente');
